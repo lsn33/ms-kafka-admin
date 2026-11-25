@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: ms-kafka-admin
+  config:
+    import: optional:file:.env[.properties]
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://cognito-idp.${AWS_REGION}.amazonaws.com/${COGNITO_USER_POOL_ID}
+
+server:
+  port: ${SERVER_PORT:8091}
+
+hotel:
+  kafka:
+    # Brokers del clúster (ver infra/docker-compose.kafka.yml). Desde la misma VPC se usa la IP privada de la EC2 de Kafka.
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093,localhost:9094}
+    request-timeout-ms: ${KAFKA_ADMIN_TIMEOUT_MS:15000}
+    # Si es true, crea los tópicos de abajo al iniciar (si ya existen no hace nada). También se puede hacer con POST /topics/inicializar
+    crear-al-iniciar: ${KAFKA_CREAR_TOPICOS_AL_INICIAR:false}
+    # Plantillas de los tópicos del proyecto: 3 particiones y 3 réplicas cada uno
+    topics:
+      # Historial de eventos de reservas: se conserva 7 días y luego se borra
+      - nombre: hotel.reservas.eventos
+        particiones: 3
+        replicas: 3
+        configs:
+          "[cleanup.policy]": delete
+          "[retention.ms]": "604800000"
+          "[min.insync.replicas]": "2"
+      # Estado más reciente de cada usuario (clave = email): se compacta y conserva el último valor
+      - nombre: hotel.usuarios.eventos
+        particiones: 3
+        replicas: 3
+        configs:
+          "[cleanup.policy]": compact
+          "[min.insync.replicas]": "2"
+          "[min.cleanable.dirty.ratio]": "0.1"

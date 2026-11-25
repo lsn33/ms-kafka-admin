@@ -1,0 +1,16 @@
+# /etc/systemd/system/ms-kafka-admin.service  (EC2 de Kafka)
+# Ajusta User y rutas. Luego: sudo systemctl daemon-reload && sudo systemctl enable --now ms-kafka-admin
+[Unit]
+Description=ms-kafka-admin (AndesStay)
+After=network.target docker.service
+
+[Service]
+User=ec2-user
+WorkingDirectory=/home/ec2-user/ms-kafka-admin
+EnvironmentFile=/home/ec2-user/ms-kafka-admin/.env
+ExecStart=/usr/bin/java -Xms96m -Xmx256m -jar /home/ec2-user/ms-kafka-admin/target/ms-kafka-admin-0.0.1-SNAPSHOT.jar
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
